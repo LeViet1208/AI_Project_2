@@ -11,4 +11,7 @@ class InputHolder:
             linelist = lines[i].split('.')
             for i in range(len(linelist)):
                 linelist[i] = linelist[i].replace(' ', '')
+                linelist[i] = linelist[i].replace('\n', '')
             self.world_array.append(linelist)
+
+   

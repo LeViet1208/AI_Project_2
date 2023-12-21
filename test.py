@@ -1,4 +1,3 @@
-from logic.class_inputholder import *
-
-t = InputHolder("input.txt")
-print(t.world_array)
+t = ('a')
+if not t:
+    print("t is empty")
