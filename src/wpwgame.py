@@ -29,6 +29,7 @@ class WumpusWorldGame:
                             self.percepts[i + k[0]][j + k[1]].add(p)
 
     def find_action(self, action_deque):
+        print('Find action in', self.agent.get_position())
         x, y = self.agent.get_position()
         percepts = self.percepts[x][y]
         t = [[0, -1], [-1, 0], [0, 1], [1, 0]]
@@ -49,7 +50,9 @@ class WumpusWorldGame:
                 if 0 <= ix < self.n and 0 <= iy < self.n and not self.visited[ix][iy] and not self.knowledge_base.get_percept_safe([ix, iy]) and not self.shooted[ix][iy]:
                     action_deque.append([2, [ix, iy]])
 
+            print('Find action from stench')
             for i in self.safed:
+                print(i)
                 if i != [x, y] and self.knowledge_base.get_percept_stench(i):
                     for j in t:
                         ix = i[0] + j[0]
@@ -76,13 +79,18 @@ class WumpusWorldGame:
         deque.append([x, y])
         visited = [[False for _ in range(self.n)] for _ in range(self.n)]
         trace = [[[] for _ in range(self.n)] for _ in range(self.n)]
+        trace[x][y] = [-1, -1]
 
         while deque:
             u = deque.popleft()
+            print(u)
             for i in t:
                 ix = u[0] + i[0]
                 iy = u[1] + i[1]
-                if 0 <= ix < self.n and 0 <= iy < self.n and self.visited[ix][iy] and not visited[ix][iy]:
+                if 0 <= ix < self.n and 0 <= iy < self.n and self.knowledge_base.get_percept_safe([ix, iy]) and not visited[ix][iy]:
+                    visited[ix][iy] = True
+                    deque.append([ix, iy])
+                    trace[ix][iy] = u
                     if [ix, iy] == pos:
                         path = []
                         while [ix, iy] != [x, y]:
@@ -91,12 +99,10 @@ class WumpusWorldGame:
                         path.append([x, y])
                         path = path[::-1]
                         return path
-                    visited[ix][iy] = True
-                    deque.append([ix, iy])
-                    trace[ix][iy] = u
         return []
     
     def agent_move(self, pos, action_deque):
+        print('Move to', pos, 'from', self.agent.get_position())
         ###If the destination is not adjacent to the current position, then go in safe
         if self.get_distance(self.agent.get_position(), pos) > 1:
             path = self.go_in_safe(pos)
@@ -133,8 +139,13 @@ class WumpusWorldGame:
                 for j in t:
                     ix = pos[0] + j[0]
                     iy = pos[1] + j[1]
-                    if 0 <= ix < self.n and 0 <= iy < self.n and not self.visited[ix][iy] and not self.knowledge_base.get_percept_safe([ix, iy]):
-                        self.knowledge_base.update([ix, iy], per, True)
+                    if 0 <= ix < self.n and 0 <= iy < self.n:
+                        if not self.visited[ix][iy]:
+                            print(pos, [ix, iy], self.knowledge_base.get_percept_safe([ix, iy]))
+                            if not self.knowledge_base.get_percept_safe([ix, iy]):
+                                self.knowledge_base.update([ix, iy], per, True)
+                            else:
+                                action_deque.insert(0, [1, [ix, iy]])
         else:
             t = [[0, -1], [-1, 0], [0, 1], [1, 0]]
             for i in t:
@@ -205,10 +216,10 @@ class WumpusWorldGame:
     def solve(self):
         action_deque = collections.deque([])
 
-
         self.visited[self.agent.get_position()[0]][self.agent.get_position()[1]] = True
         while True:
-            print(self.agent.get_position())
+            print('Decision in ', self.agent.get_position())
+            print(action_deque)
             if self.agent.is_dead() or self.agent.is_escape():
                 return self.score
             
@@ -217,6 +228,8 @@ class WumpusWorldGame:
                 self.perform_action(act, action_deque)
             else:
                 self.find_action(action_deque)
+                if not action_deque:
+                    return self.score
 
 
 ####Test
@@ -226,4 +239,12 @@ f = open('output.txt', 'w')
 f.write(str(game.solve()))
 for i in game.path:
     f.write('\n' + str(i[0]) + ' ' + str(i[1][0] + 1) + ' ' + str(i[1][1] + 1))
+game.safed.sort()
+for i in game.safed:
+    f.write('\n' + str(i[0] + 1) + ' ' + str(i[1] + 1))
+    f.write('\nP :' + str(game.knowledge_base.get_percept_pit(i)))
+    f.write('\nW :' + str(game.knowledge_base.get_percept_wumpus(i)))
+    f.write('\nS :' + str(game.knowledge_base.get_percept_stench(i)))
+    f.write('\nB :' + str(game.knowledge_base.get_percept_breeze(i)))
+    f.write('\nSafe :' + str(game.knowledge_base.get_percept_safe(i)))
 f.close()
