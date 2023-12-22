@@ -125,6 +125,7 @@ class WumpusWorldGame:
         a = self.array[pos[0]][pos[1]]
         p = self.percepts[pos[0]][pos[1]]
         if a == 'W' or a == 'P':
+            print('Dead')
             self.agent.dead()
             self.score -= 10000
             return False
@@ -132,6 +133,7 @@ class WumpusWorldGame:
             self.score += 1000
             self.array[pos[0]][pos[1]] = '-'
         elif pos == [0, 0]:
+            print('Escape')
             self.score += 10
             return True
         
@@ -162,6 +164,15 @@ class WumpusWorldGame:
                     self.safed.append([ix, iy])
 
         return True
+
+    def check_around(self, pos, per):
+        t = [[0, -1], [-1, 0], [0, 1], [1, 0]]
+        for i in t:
+            ix = pos[0] + i[0]
+            iy = pos[1] + i[1]
+            if 0 <= ix < self.n and 0 <= iy < self.n and self.array[ix][iy] == 'W':
+                return True
+        return False
 
     def agent_shoot(self, pos, action_deque):
         t = [[0, -1], [-1, 0], [0, 1], [1, 0]]
@@ -203,9 +214,10 @@ class WumpusWorldGame:
                 ix = pos[0] + i[0]
                 iy = pos[1] + i[1]
                 if 0 <= ix < self.n and 0 <= iy < self.n:
-                    self.knowledge_base.update([ix, iy], 'S', False)
-                    if 'S' in self.percepts[ix][iy]:
-                        self.percepts[ix][iy].remove('S')
+                    if not self.check_around([ix, iy], 'W'):
+                        self.knowledge_base.update([ix, iy], 'S', False)
+                        if 'S' in self.percepts[ix][iy]:
+                            self.percepts[ix][iy].remove('S')
             self.knowledge_base.update(pos, 'W', False)
             self.knowledge_base.update(pos, 'Safe', True)
             self.safed.append(pos)
