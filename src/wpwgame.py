@@ -42,7 +42,8 @@ class WumpusWorldGame:
                         action_deque.append([1, [x + i[0], y + i[1]]])
                         self.knowledge_base.update([x + i[0], y + i[1]], 'Safe', True)
                         self.safed.append([x + i[0], y + i[1]])
-        else:
+
+        if not action_deque:
             ### Find all rooms that has percept Stench and try to kill the Wumpus nearby
             for i in t:
                 ix = x + i[0]
@@ -111,6 +112,8 @@ class WumpusWorldGame:
             
             for i in path:
                 self.path.append([1, i])
+                if not self.visited[i[0]][i[1]]:
+                    self.visited[i[0]][i[1]] = True
                 self.score -= 10
         else:
             self.path.append([1, pos])
@@ -127,11 +130,13 @@ class WumpusWorldGame:
             return False
         elif a == 'G':
             self.score += 1000
+            self.array[pos[0]][pos[1]] = '-'
         elif pos == [0, 0]:
             self.score += 10
             return True
         
         if p:
+            print('Percept in ', pos, p)
             for i in p:
                 self.knowledge_base.update(pos, i, True)
                 per = self.knowledge_base.percept_reason[i]
@@ -160,6 +165,10 @@ class WumpusWorldGame:
 
     def agent_shoot(self, pos, action_deque):
         t = [[0, -1], [-1, 0], [0, 1], [1, 0]]
+        if self.shooted[pos[0]][pos[1]]:
+            return False
+        
+        print('Shoot to', pos, 'from', self.agent.get_position())
         ### If shoot the tile not adjacent to the current position, choose a tile adjacent to the destination and has breeze (if can)
         if self.get_distance(self.agent.get_position(), pos) != 1:
             d = []
@@ -178,6 +187,8 @@ class WumpusWorldGame:
             path = self.go_in_safe(d)
             for i in path:
                 self.path.append([1, i])
+                if not self.visited[i[0]][i[1]]:
+                    self.visited[i[0]][i[1]] = True
                 self.score -= 10
             self.agent.set_position(d)
         
@@ -193,7 +204,8 @@ class WumpusWorldGame:
                 iy = pos[1] + i[1]
                 if 0 <= ix < self.n and 0 <= iy < self.n:
                     self.knowledge_base.update([ix, iy], 'S', False)
-                    self.percepts[ix][iy].remove('S')
+                    if 'S' in self.percepts[ix][iy]:
+                        self.percepts[ix][iy].remove('S')
             self.knowledge_base.update(pos, 'W', False)
             self.knowledge_base.update(pos, 'Safe', True)
             self.safed.append(pos)
@@ -217,6 +229,8 @@ class WumpusWorldGame:
         action_deque = collections.deque([])
 
         self.visited[self.agent.get_position()[0]][self.agent.get_position()[1]] = True
+        self.safed.append(self.agent.get_position())
+        
         while True:
             print('Decision in ', self.agent.get_position())
             print(action_deque)

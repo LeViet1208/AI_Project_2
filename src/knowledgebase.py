@@ -10,6 +10,9 @@ class KnowledgeBase:
         new_dict = dict(self.knowledge_base[x][y])
         new_dict[percept] = status
         self.knowledge_base[x][y] = new_dict
+        if percept == 'Safe' and status:
+            self.update(position, 'P', False)
+            self.update(position, 'W', False)
 
     def get_percept_safe(self, position):
         x, y = position
