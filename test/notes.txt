@@ -1,0 +1,5 @@
+map1: regular case
+map2: regular case
+map3: regular case
+map4: regular case
+map5: regular case
