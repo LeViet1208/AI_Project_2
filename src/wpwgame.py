@@ -259,18 +259,18 @@ class WumpusWorldGame:
 
 
 ####Test
-input_holder = InputHolder('input.txt')
-game = WumpusWorldGame(input_holder)
-f = open('output.txt', 'w')
-f.write(str(game.solve()))
-for i in game.path:
-    f.write('\n' + str(i[0]) + ' ' + str(i[1][0] + 1) + ' ' + str(i[1][1] + 1))
-game.safed.sort()
-for i in game.safed:
-    f.write('\n' + str(i[0] + 1) + ' ' + str(i[1] + 1))
-    f.write('\nP :' + str(game.knowledge_base.get_percept_pit(i)))
-    f.write('\nW :' + str(game.knowledge_base.get_percept_wumpus(i)))
-    f.write('\nS :' + str(game.knowledge_base.get_percept_stench(i)))
-    f.write('\nB :' + str(game.knowledge_base.get_percept_breeze(i)))
-    f.write('\nSafe :' + str(game.knowledge_base.get_percept_safe(i)))
-f.close()
+# input_holder = InputHolder('input.txt')
+# game = WumpusWorldGame(input_holder)
+# f = open('output.txt', 'w')
+# f.write(str(game.solve()))
+# for i in game.path:
+#     f.write('\n' + str(i[0]) + ' ' + str(i[1][0] + 1) + ' ' + str(i[1][1] + 1))
+# game.safed.sort()
+# for i in game.safed:
+#     f.write('\n' + str(i[0] + 1) + ' ' + str(i[1] + 1))
+#     f.write('\nP :' + str(game.knowledge_base.get_percept_pit(i)))
+#     f.write('\nW :' + str(game.knowledge_base.get_percept_wumpus(i)))
+#     f.write('\nS :' + str(game.knowledge_base.get_percept_stench(i)))
+#     f.write('\nB :' + str(game.knowledge_base.get_percept_breeze(i)))
+#     f.write('\nSafe :' + str(game.knowledge_base.get_percept_safe(i)))
+# f.close()
