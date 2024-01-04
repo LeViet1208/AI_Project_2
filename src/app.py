@@ -19,5 +19,5 @@ class App:
         os.system('cls' if os.name == 'nt' else 'clear')
         for i in range(self.num_rows):
             for j in range(self.num_cols):
-                print(self.input_holder.world_array[i][j] + ' ', end='')
+                print(' ' + self.input_holder.world_array[i][j] + '   ', end='')
             print()

@@ -1,6 +1,6 @@
 import os
 
-from src.app import App
+from app import App
 
 def get_user_input():
     print("Notice:\n- Please be sure that all the input files are placed in the <test> directory of this program.\n- The input file must be of the form <file_name>.txt")
