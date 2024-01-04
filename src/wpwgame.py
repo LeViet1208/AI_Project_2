@@ -1,276 +1,273 @@
 import collections
+import random
 from agent import Agent
 from knowledgebase import KnowledgeBase
 from inputholder import InputHolder
 
+ff = open('output_process.txt', 'w')
+
 class WumpusWorldGame:
     def __init__(self, input_holder):
         self.n = input_holder.world_size
+        self.t = [[0, -1], [-1, 0], [0, 1], [1, 0]]
         self.score = 0
         self.array = [['' for i in range(self.n)] for j in range(self.n)]
         self.agent = Agent([0, 0])
-        self.percepts = [[set() for i in range(self.n)] for j in range(self.n)]
+        self.expanded_list = []
         self.visited = [[False for i in range(self.n)] for j in range(self.n)]
         self.shooted = [[False for i in range(self.n)] for j in range(self.n)]
-        self.safed = []
         self.path = []
-        self.knowledge_base = KnowledgeBase(self.n)
+        self.knowledge_base = [[KnowledgeBase() for i in range(self.n)] for j in range(self.n)]
         #return 
         for i in range(self.n):
             for j in range(self.n):
-                self.array[i][j] = input_holder.world_array[self.n - i - 1][j]
+                self.array[i][j] = input_holder.world_array[i][j]
                 if self.array[i][j] == 'A':
                     self.agent.set_position([i, j])
-                t = [[0, 1], [1, 0], [0, -1], [-1, 0]]
-                if self.array[i][j] == 'W' or self.array[i][j] == 'P':
-                    p = 'S' if self.array[i][j] == 'W' else 'B'
-                    for k in t:
-                        if 0 <= i + k[0] < self.n and 0 <= j + k[1] < self.n:
-                            self.percepts[i + k[0]][j + k[1]].add(p)
+                
+    def get_percepts(self, x, y):
+        self.knowledge_base[x][y].update('Safe', True)
+        self.knowledge_base[x][y].update('W', False)
+        self.knowledge_base[x][y].update('P', False)
+        for i in self.t:
+            ix = x + i[0]
+            iy = y + i[1]
+            if 0 <= ix < self.n and 0 <= iy < self.n:
+                if self.array[ix][iy] == 'W':
+                    self.knowledge_base[x][y].update('S', True)
+                if self.array[ix][iy] == 'P':
+                    self.knowledge_base[x][y].update('B', True)
 
-    def find_action(self, action_deque):
-        print('Find action in', self.agent.get_position())
-        x, y = self.agent.get_position()
-        percepts = self.percepts[x][y]
-        t = [[0, -1], [-1, 0], [0, 1], [1, 0]]
+    def expand_tile(self, position):
+        x, y = position[0], position[1]
+        tt = len(self.expanded_list) - 1
+        while tt >= 0:
+            if self.expanded_list[tt] == position:
+                self.expanded_list.pop(tt)
+            tt -= 1
+        self.get_percepts(x, y)
+        self.visited[x][y] = True
 
-        if not percepts:
-            ### If there is no percept, then the adjacent rooms are safe    
-            for i in t:
-                if 0 <= x + i[0] < self.n and 0 <= y + i[1] < self.n:
-                    if not self.visited[x + i[0]][y + i[1]]:
-                        action_deque.append([1, [x + i[0], y + i[1]]])
-                        self.knowledge_base.update([x + i[0], y + i[1]], 'Safe', True)
-                        self.safed.append([x + i[0], y + i[1]])
+        for i in self.t:
+            ix = x + i[0]
+            iy = y + i[1]
+            if 0 <= ix < self.n and 0 <= iy < self.n:
+                if not self.visited[ix][iy] and [ix, iy] not in self.expanded_list:
+                    self.expanded_list.append([ix, iy])
+                    if not self.knowledge_base[x][y].check('S') and not self.knowledge_base[x][y].check('B'):
+                        self.knowledge_base[ix][iy].update('Safe', True)
+                    else:
+                        if self.knowledge_base[x][y].check('S'):
+                            self.knowledge_base[ix][iy].update('W', True)
+                        if self.knowledge_base[x][y].check('B'):
+                            self.knowledge_base[ix][iy].update('P', True)
 
-        if not action_deque:
-            ### Find all rooms that has percept Stench and try to kill the Wumpus nearby
-            for i in t:
-                ix = x + i[0]
-                iy = y + i[1]
-                if 0 <= ix < self.n and 0 <= iy < self.n and not self.visited[ix][iy] and not self.knowledge_base.get_percept_safe([ix, iy]) and not self.shooted[ix][iy]:
-                    action_deque.append([2, [ix, iy]])
+    def bfs(self, start, end):
+        print('--------------Begin BFS--------------')
+        if start == end:
+            return []
+        q = collections.deque()
+        q.append(start)
+        visited = [[False for i in range(self.n)] for j in range(self.n)]
+        traced = [[[-1, -1] for i in range(self.n)] for j in range(self.n)]
+        visited[start[0]][start[1]] = True
+        while len(q) > 0:
+            node = q.popleft()
+            print(node)
+            for i in self.t:
+                ix = node[0] + i[0]
+                iy = node[1] + i[1]
+                if 0 <= ix < self.n and 0 <= iy < self.n:
+                    if not visited[ix][iy] and (self.visited[ix][iy] or [ix, iy] == end):
+                        visited[ix][iy] = True
+                        traced[ix][iy] = node
+                        q.append([ix, iy])
+                        if [ix, iy] == end:
+                            path = []
+                            while [ix, iy] != start:
+                                path.append([ix, iy])
+                                ix, iy = traced[ix][iy]
+                            path.reverse()
+                            return path
+        return None
+    
+    ###Mahattan distance between position and escape tile ([0, 0])
+    def heuristic(self, position):
+        return position[0] + position[1]
+    
+    def rdc(self):
+        return random.randint(0, 100) % 2 == 1
 
-            print('Find action from stench')
-            for i in self.safed:
-                print(i)
-                if i != [x, y] and self.knowledge_base.get_percept_stench(i):
-                    for j in t:
-                        ix = i[0] + j[0]
-                        iy = i[1] + j[1]
-                        if 0 <= ix < self.n and 0 <= iy < self.n and not self.knowledge_base.get_percept_safe([ix, iy]) and not self.shooted[ix][iy]:
-                            action_deque.append([2, [ix, iy]])
+    def choose_action(self):
+        ###Choose a safe tile nearest with current tile
+        print('Current position: ', self.agent.get_position())
+        print('Expanded list: ', self.expanded_list)
+        choose = None
+        cost = -1
+        path = []
+        for i in self.expanded_list:
+            if self.knowledge_base[i[0]][i[1]].check('Safe'):
+                ipath = self.bfs(self.agent.get_position(), i)
+                print('------------------End BFS------------------')
+                if ipath == None:
+                    print('Error: No path found in ', i)
+                    continue
+                icost = len(ipath) * -10
+                if cost == -1 or icost > cost or (icost == cost and self.heuristic(i) < self.heuristic(choose)):
+                    choose = i
+                    cost = icost
+                    path = ipath
         
-        ### If there no action can be found, then the unknown risk is Pit => Just try to go straight (No solution)
-        if not action_deque:
-            for i in t:
-                ix = x + i[0]
-                iy = y + i[1]
-                if 0 <= ix < self.n and 0 <= iy < self.n and not self.visited[ix][iy]:
-                    action_deque.append([1, [ix, iy]])
+        if choose != None:
+            print('Choose: ', choose, 'type 1', 'path: ', path, 'cost: ', cost)
+            return [1, choose], path
+        
+        ###If not safe tile can expand, try to kill wumpus on Stench tile
+        for i in self.expanded_list:
+            if self.knowledge_base[i[0]][i[1]].check('W') and not self.shooted[i[0]][i[1]]:
+                ipath = self.bfs(self.agent.get_position(), i)
+                print('------------------End BFS------------------')
+                if ipath == None:
+                    print('Error: No path found in ', i)
+                    continue
+                icost = len(ipath) * -10 - 100
+                if cost == -1 or icost > cost or (icost == cost and self.heuristic(i) < self.heuristic(choose)):
+                    choose = i
+                    cost = icost
+                    path = ipath
+        
+        if choose != None:
+            print('Choose: ', choose, 'type 2', 'path: ', path)
+            return [2, choose], path
+        
+        ###If not safe tile just go to tile with lowest cost and heuristic
+        for i in self.expanded_list:
+            ipath = self.bfs(self.agent.get_position(), i)
+            print('------------------End BFS------------------\n\n')
+            if ipath == None:
+                print('Error: No path found in ', i)
+                continue
+            icost = len(ipath) * -10
+            if cost == -1 or icost > cost or (icost == cost and self.heuristic(i) < self.heuristic(choose)) or (icost == cost and self.heuristic(i) == self.heuristic(choose) and self.rdc()):
+                choose = i
+                cost = icost
+                path = ipath
 
-    def get_distance(self, pos1, pos2):
-        return abs(pos1[0] - pos2[0]) + abs(pos1[1] - pos2[1])
-    
-    def go_in_safe(self, pos):
-        ###BFS from current position to the position need to go
-        x, y = self.agent.get_position()
-        t = [[0, -1], [-1, 0], [0, 1], [1, 0]]
-        deque = collections.deque([])
-        deque.append([x, y])
-        visited = [[False for _ in range(self.n)] for _ in range(self.n)]
-        trace = [[[] for _ in range(self.n)] for _ in range(self.n)]
-        trace[x][y] = [-1, -1]
-
-        while deque:
-            u = deque.popleft()
-            print(u)
-            for i in t:
-                ix = u[0] + i[0]
-                iy = u[1] + i[1]
-                if 0 <= ix < self.n and 0 <= iy < self.n and self.knowledge_base.get_percept_safe([ix, iy]) and not visited[ix][iy]:
-                    visited[ix][iy] = True
-                    deque.append([ix, iy])
-                    trace[ix][iy] = u
-                    if [ix, iy] == pos:
-                        path = []
-                        while [ix, iy] != [x, y]:
-                            path.append([ix, iy])
-                            ix, iy = trace[ix][iy]
-                        path.append([x, y])
-                        path = path[::-1]
-                        return path
-        return []
-    
-    def agent_move(self, pos, action_deque):
-        print('Move to', pos, 'from', self.agent.get_position())
-        ###If the destination is not adjacent to the current position, then go in safe
-        if self.get_distance(self.agent.get_position(), pos) > 1:
-            path = self.go_in_safe(pos)
-            if not path:
-                return False
-            
-            for i in path:
-                self.path.append([1, i])
-                if not self.visited[i[0]][i[1]]:
-                    self.visited[i[0]][i[1]] = True
-                self.score -= 10
+        if choose != None:
+            print('Choose: ', choose, 'type 3', 'path: ', path)
+            return [1, choose], path
         else:
-            self.path.append([1, pos])
+            print('Error: No action found')
+            return None
+        
+    def move_agent(self, position, path):
+        for i in path:
             self.score -= 10
+            self.path.append([1, i])
 
-        self.agent.set_position(pos)
-        self.visited[pos[0]][pos[1]] = True
-
-        a = self.array[pos[0]][pos[1]]
-        p = self.percepts[pos[0]][pos[1]]
-        if a == 'W' or a == 'P':
-            print('Dead')
+        self.agent.set_position(position)
+        cur = self.array[position[0]][position[1]]
+        if cur == 'W' or cur == 'P':
             self.agent.dead()
             self.score -= 10000
-            return False
-        elif a == 'G':
-            self.score += 1000
-            self.array[pos[0]][pos[1]] = '-'
-        elif pos == [0, 0]:
-            print('Escape')
-            self.score += 10
-            return True
-        
-        if p:
-            print('Percept in ', pos, p)
-            for i in p:
-                self.knowledge_base.update(pos, i, True)
-                per = self.knowledge_base.percept_reason[i]
-                t = [[0, -1], [-1, 0], [0, 1], [1, 0]]
-                for j in t:
-                    ix = pos[0] + j[0]
-                    iy = pos[1] + j[1]
-                    if 0 <= ix < self.n and 0 <= iy < self.n:
-                        if not self.visited[ix][iy]:
-                            print(pos, [ix, iy], self.knowledge_base.get_percept_safe([ix, iy]))
-                            if not self.knowledge_base.get_percept_safe([ix, iy]):
-                                self.knowledge_base.update([ix, iy], per, True)
-                            else:
-                                action_deque.insert(0, [1, [ix, iy]])
+            self.path.append([6, position])
         else:
-            t = [[0, -1], [-1, 0], [0, 1], [1, 0]]
-            for i in t:
-                ix = pos[0] + i[0]
-                iy = pos[1] + i[1]
-                if 0 <= ix < self.n and 0 <= iy < self.n and not self.visited[ix][iy]:
-                    action_deque.insert(0, [1, [ix, iy]])
-                    self.knowledge_base.update([ix, iy], 'Safe', True)
-                    self.safed.append([ix, iy])
+            if cur == 'G':
+                self.score += 1000
+                self.array[position[0]][position[1]] = '-'
+                self.path.append([3, position])
 
-        return True
-
-    def check_around(self, pos, per):
-        t = [[0, -1], [-1, 0], [0, 1], [1, 0]]
-        for i in t:
-            ix = pos[0] + i[0]
-            iy = pos[1] + i[1]
-            if 0 <= ix < self.n and 0 <= iy < self.n and self.array[ix][iy] == 'W':
-                return True
-        return False
-
-    def agent_shoot(self, pos, action_deque):
-        t = [[0, -1], [-1, 0], [0, 1], [1, 0]]
-        if self.shooted[pos[0]][pos[1]]:
-            return False
-        
-        print('Shoot to', pos, 'from', self.agent.get_position())
-        ### If shoot the tile not adjacent to the current position, choose a tile adjacent to the destination and has breeze (if can)
-        if self.get_distance(self.agent.get_position(), pos) != 1:
-            d = []
-            for i in t:
-                ix = pos[0] + i[0]
-                iy = pos[1] + i[1]
-                if 0 <= ix < self.n and 0 <= iy < self.n and self.knowledge_base.get_percept_safe([ix, iy]):
-                    if not d:
-                        d = [ix, iy]
-                    else:
-                        if self.knowledge_base.get_percept_breeze(d) and not self.knowledge_base.get_percept_breeze([ix, iy]):
-                            d = [ix, iy]
-            if not d:
-                return False
-
-            path = self.go_in_safe(d)
-            for i in path:
-                self.path.append([1, i])
-                if not self.visited[i[0]][i[1]]:
-                    self.visited[i[0]][i[1]] = True
-                self.score -= 10
-            self.agent.set_position(d)
-        
-        self.shooted[pos[0]][pos[1]] = True
-        self.score -= 100
-        self.path.append([2, pos])
-
-        if self.array[pos[0]][pos[1]] == 'W':
-            self.path.append([4, pos])
-            self.array[pos[0]][pos[1]] = '-'
-            for i in t:
-                ix = pos[0] + i[0]
-                iy = pos[1] + i[1]
-                if 0 <= ix < self.n and 0 <= iy < self.n:
-                    if not self.check_around([ix, iy], 'W'):
-                        self.knowledge_base.update([ix, iy], 'S', False)
-                        if 'S' in self.percepts[ix][iy]:
-                            self.percepts[ix][iy].remove('S')
-            self.knowledge_base.update(pos, 'W', False)
-            self.knowledge_base.update(pos, 'Safe', True)
-            self.safed.append(pos)
-            action_deque.append([1, pos])
-        elif not self.knowledge_base.get_percept_breeze(self.agent.get_position()):
-            self.knowledge_base.update(pos, 'W', False)
-            self.knowledge_base.update(pos, 'Safe', True)
-            self.safed.append(pos)
-            action_deque.append([1, pos])
-
-    def perform_action(self, action, action_deque):
-        act, pos = action
-        if act == 1:
-            return self.agent_move(pos, action_deque)
-        elif act == 2:
-            return self.agent_shoot(pos, action_deque)
+            if position == [0, 0]:
+                self.score += 10
+                self.path.append([5, position])
+                return 
             
-        return False
+            self.expand_tile(position)
+
+    def check_breeze_nearly(self, position):
+        for i in self.t:
+            ix = position[0] + i[0]
+            iy = position[1] + i[1]
+            if 0 <= ix < self.n and 0 <= iy < self.n:
+                if self.visited[ix][iy] and not self.knowledge_base[ix][iy].check('B'):
+                    return True
+
+    def check_stench(self, x, y):
+        if not self.knowledge_base[x][y].check('S'):
+            return
+        
+        ###Check if there is a Wumpus adjacent Stench tile
+        for i in self.t:
+            ix = x + i[0]
+            iy = y + i[1]
+            if 0 <= ix < self.n and 0 <= iy < self.n:
+                if self.array[ix][iy] == 'W':
+                    return
+        
+        ###If no Wumpus adjacent, mark not Stench
+        self.knowledge_base[x][y].update('S', False)
+
+    def shoot(self, position, path):
+        ###Move to tile Stench tile
+        for i in range(0, len(path) - 1):
+            self.score -= 10
+            self.path.append([1, path[i]])
+
+        self.agent.set_position(position)
+        self.shooted[position[0]][position[1]] = True
+        self.path.append([2, position])
+        self.score -= 100
+
+        if self.array[position[0]][position[1]] == 'W' or self.check_breeze_nearly(position):
+            self.knowledge_base[position[0]][position[1]].update('Safe', True)
+
+
+        if self.array[position[0]][position[1]] == 'W':
+            self.array[position[0]][position[1]] = '-'
+            self.knowledge_base[position[0]][position[1]].update('Safe', True)
+            self.path.append([4, position])
+        self.knowledge_base[position[0]][position[1]].update('W', False)    
+
+        for i in self.t:
+            ix = position[0] + i[0]
+            iy = position[1] + i[1]
+            if 0 <= ix < self.n and 0 <= iy < self.n and [ix, iy] in self.expanded_list:
+                self.check_stench(ix, iy)
 
     def solve(self):
-        action_deque = collections.deque([])
 
-        self.visited[self.agent.get_position()[0]][self.agent.get_position()[1]] = True
-        self.safed.append(self.agent.get_position())
-        
-        while True:
-            print('Decision in ', self.agent.get_position())
-            print(action_deque)
-            if self.agent.is_dead() or self.agent.is_escape():
+        self.expand_tile(self.agent.get_position())
+
+        while len(self.expanded_list) > 0:
+            action, path = self.choose_action()
+            ff.write(str(action) + '\n')
+            if action == None:
+                return None
+            
+            if action[0] == 1:
+                self.move_agent(action[1], path)
+            elif action[0] == 2:
+                self.shoot(action[1], path)
+            else:
+                print('Error: Invalid action')
+                return None
+            
+            if self.agent.is_dead():
+                print('Agent is dead')
+                return self.score
+            if self.agent.is_escape():
+                print('Agent is escape')
                 return self.score
             
-            if action_deque:
-                act = action_deque.popleft()
-                self.perform_action(act, action_deque)
-            else:
-                self.find_action(action_deque)
-                if not action_deque:
-                    return self.score
-
+            
 
 ####Test
-# input_holder = InputHolder('input.txt')
-# game = WumpusWorldGame(input_holder)
-# f = open('output.txt', 'w')
-# f.write(str(game.solve()))
-# for i in game.path:
-#     f.write('\n' + str(i[0]) + ' ' + str(i[1][0] + 1) + ' ' + str(i[1][1] + 1))
-# game.safed.sort()
-# for i in game.safed:
-#     f.write('\n' + str(i[0] + 1) + ' ' + str(i[1] + 1))
-#     f.write('\nP :' + str(game.knowledge_base.get_percept_pit(i)))
-#     f.write('\nW :' + str(game.knowledge_base.get_percept_wumpus(i)))
-#     f.write('\nS :' + str(game.knowledge_base.get_percept_stench(i)))
-#     f.write('\nB :' + str(game.knowledge_base.get_percept_breeze(i)))
-#     f.write('\nSafe :' + str(game.knowledge_base.get_percept_safe(i)))
-# f.close()
+input_holder = InputHolder('test/map5.txt')              
+game = WumpusWorldGame(input_holder)
+score = game.solve()  
+ff.close()
+f = open('output.txt', 'w')
+for i in game.path:
+    f.write(str(i) + '\n')
+f.close()
+print(score)

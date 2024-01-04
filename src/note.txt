@@ -1,0 +1,11 @@
+Agent logic:
+    Ưu tiên từ trên xuống
+    1. Mở rộng hết những ô an toàn để kiếm thêm thông tin về các ô khác
+    2. Giết wumpus trong các ô chưa mở rộng để lấy thông tin
+    3. Chọn random các ô chưa an toàn nhưng gần với [0, 0] nhất để tối ưu điểm
+
+    Lấy thông tin:
+        Nếu đi tới ô X và không có các percept là S và B => ô X an toàn và các ô liên kề X cũng an toàn
+        Nếu bắn cung vào một ô X:
+            - Không giết được wumpus => ô X an toàn nếu có thông tin về một ô kề với ô X mà không có Breeze
+            - Giết được wumpus => ô X an toàn
