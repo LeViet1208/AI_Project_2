@@ -1,8 +1,8 @@
 import collections
 import random
 from agent import Agent
-from knowledgebase import KnowledgeBase
-from inputholder import InputHolder
+from knowledge_base import KnowledgeBase
+from input_holder import InputHolder
 
 ff = open('output_process.txt', 'w')
 
