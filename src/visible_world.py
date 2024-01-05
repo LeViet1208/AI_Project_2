@@ -20,7 +20,10 @@ class VisibleWorld:
         self.curr_x = x
         self.curr_y = y
 
-    def on_kill_wumpus(self, x, y):
+    def on_shoot_arrow(self, x, y):
+        if (self.world[x][y] != 'W'):
+            return
+
         self.world[x][y] = ''
         
         # Check adjacent cells

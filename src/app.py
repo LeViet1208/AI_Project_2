@@ -45,7 +45,11 @@ class App:
 
         # Shoot
         elif step[0] == 2:
+            self.visible_world.on_shoot_arrow(row, col)
             self.console_log = 'Agent has shot to ' + str(x) + ' ' + str(y)
+
+            self.visible_world.on_move(row, col)
+            self.console_log = self.console_log + '\nAgent has moved to ' + str(x) + ' ' + str(y)
 
         # Take gold
         elif step[0] == 3:
@@ -53,7 +57,6 @@ class App:
 
         # Kill Wumpus
         elif step[0] == 4:
-            self.visible_world.on_kill_wumpus(row, col)
             self.console_log = 'Agent has killed Wumpus in ' + str(x) + ' ' + str(y)
 
         # Escape
