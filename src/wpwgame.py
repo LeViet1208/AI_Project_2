@@ -97,6 +97,54 @@ class WumpusWorldGame:
     
     def rdc(self):
         return random.randint(0, 100) % 2 == 1
+    
+    def check_safe(self, position):
+        x, y = position[0], position[1]
+        if self.knowledge_base[x][y].check('Safe'):
+            return
+        
+        if self.knowledge_base[x][y].check('W'):
+            flag = 2
+            for i in self.t:
+                ix = x + i[0]
+                iy = y + i[1]
+                if 0 <= ix < self.n and 0 <= iy < self.n and self.visited[ix][iy]:
+                    if self.knowledge_base[ix][iy].check('S'):
+                        if flag == 2:
+                            flag = 0
+                        elif flag == 1:
+                            flag = 3
+                    else:
+                        if flag == 2:
+                            flag = 1
+                        elif flag == 0:
+                            flag = 3
+
+            if flag == 3:
+                self.knowledge_base[x][y].update('W', False)
+        
+        if self.knowledge_base[x][y].check('P'):
+            flag = 2
+            for i in self.t:
+                ix = x + i[0]
+                iy = y + i[1]
+                if 0 <= ix < self.n and 0 <= iy < self.n and self.visited[ix][iy]:
+                    if self.knowledge_base[ix][iy].check('B'):
+                        if flag == 2:
+                            flag = 0
+                        elif flag == 1:
+                            flag = 3
+                    else:
+                        if flag == 2:
+                            flag = 1
+                        elif flag == 0:
+                            flag = 3
+
+            if flag == 3:
+                self.knowledge_base[x][y].update('P', False)
+
+        if not self.knowledge_base[x][y].check('W') and not self.knowledge_base[x][y].check('P'):
+            self.knowledge_base[x][y].update('Safe', True)
 
     def choose_action(self):
         ###Choose a safe tile nearest with current tile
@@ -106,6 +154,7 @@ class WumpusWorldGame:
         cost = -1
         path = []
         for i in self.expanded_list:
+            self.check_safe(i)
             if self.knowledge_base[i[0]][i[1]].check('Safe'):
                 ipath = self.bfs(self.agent.get_position(), i)
                 # print('------------------End BFS------------------')
@@ -210,10 +259,11 @@ class WumpusWorldGame:
     def shoot(self, position, path):
         ###Move to tile Stench tile
         for i in range(0, len(path) - 1):
-            self.score -= 10
-            self.path.append([1, path[i]])
+            if path[i] != position:
+                self.score -= 10
+                self.path.append([1, path[i]])
+                self.agent.set_position(path[i])
 
-        self.agent.set_position(position)
         self.shooted[position[0]][position[1]] = True
         self.path.append([2, position])
         self.score -= 100
@@ -262,12 +312,12 @@ class WumpusWorldGame:
             
 
 ####Test
-# input_holder = InputHolder('test/map5.txt')              
-# game = WumpusWorldGame(input_holder)
-# score = game.solve()  
-# ff.close()
-# f = open('output.txt', 'w')
-# for i in game.path:
-#     f.write(str(i) + '\n')
-# f.close()
-# print(score)
+input_holder = InputHolder('test/map4.txt')              
+game = WumpusWorldGame(input_holder)
+score = game.solve()  
+ff.close()
+f = open('output.txt', 'w')
+for i in game.path:
+    f.write(str(i) + '\n')
+f.close()
+print(score)
