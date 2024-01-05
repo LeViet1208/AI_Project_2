@@ -1,7 +1,7 @@
 import collections
 from agent import Agent
-from knowledgebase import KnowledgeBase
-from inputholder import InputHolder
+from knowledge_base import KnowledgeBase
+from input_holder import InputHolder
 
 class WumpusWorldGame:
     def __init__(self, input_holder):
