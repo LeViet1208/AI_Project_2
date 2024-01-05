@@ -63,7 +63,7 @@ class WumpusWorldGame:
                             self.knowledge_base[ix][iy].update('P', True)
 
     def bfs(self, start, end):
-        print('--------------Begin BFS--------------')
+        # print('--------------Begin BFS--------------')
         if start == end:
             return []
         q = collections.deque()
@@ -73,7 +73,7 @@ class WumpusWorldGame:
         visited[start[0]][start[1]] = True
         while len(q) > 0:
             node = q.popleft()
-            print(node)
+            # print(node)
             for i in self.t:
                 ix = node[0] + i[0]
                 iy = node[1] + i[1]
@@ -100,17 +100,17 @@ class WumpusWorldGame:
 
     def choose_action(self):
         ###Choose a safe tile nearest with current tile
-        print('Current position: ', self.agent.get_position())
-        print('Expanded list: ', self.expanded_list)
+        # print('Current position: ', self.agent.get_position())
+        # print('Expanded list: ', self.expanded_list)
         choose = None
         cost = -1
         path = []
         for i in self.expanded_list:
             if self.knowledge_base[i[0]][i[1]].check('Safe'):
                 ipath = self.bfs(self.agent.get_position(), i)
-                print('------------------End BFS------------------')
+                # print('------------------End BFS------------------')
                 if ipath == None:
-                    print('Error: No path found in ', i)
+                    # print('Error: No path found in ', i)
                     continue
                 icost = len(ipath) * -10
                 if cost == -1 or icost > cost or (icost == cost and self.heuristic(i) < self.heuristic(choose)):
@@ -119,16 +119,16 @@ class WumpusWorldGame:
                     path = ipath
         
         if choose != None:
-            print('Choose: ', choose, 'type 1', 'path: ', path, 'cost: ', cost)
+            # print('Choose: ', choose, 'type 1', 'path: ', path, 'cost: ', cost)
             return [1, choose], path
         
         ###If not safe tile can expand, try to kill wumpus on Stench tile
         for i in self.expanded_list:
             if self.knowledge_base[i[0]][i[1]].check('W') and not self.shooted[i[0]][i[1]]:
                 ipath = self.bfs(self.agent.get_position(), i)
-                print('------------------End BFS------------------')
+                # print('------------------End BFS------------------')
                 if ipath == None:
-                    print('Error: No path found in ', i)
+                    # print('Error: No path found in ', i)
                     continue
                 icost = len(ipath) * -10 - 100
                 if cost == -1 or icost > cost or (icost == cost and self.heuristic(i) < self.heuristic(choose)):
@@ -137,15 +137,15 @@ class WumpusWorldGame:
                     path = ipath
         
         if choose != None:
-            print('Choose: ', choose, 'type 2', 'path: ', path)
+            # print('Choose: ', choose, 'type 2', 'path: ', path)
             return [2, choose], path
         
         ###If not safe tile just go to tile with lowest cost and heuristic
         for i in self.expanded_list:
             ipath = self.bfs(self.agent.get_position(), i)
-            print('------------------End BFS------------------\n\n')
+            # print('------------------End BFS------------------\n\n')
             if ipath == None:
-                print('Error: No path found in ', i)
+                # print('Error: No path found in ', i)
                 continue
             icost = len(ipath) * -10
             if cost == -1 or icost > cost or (icost == cost and self.heuristic(i) < self.heuristic(choose)) or (icost == cost and self.heuristic(i) == self.heuristic(choose) and self.rdc()):
@@ -154,10 +154,10 @@ class WumpusWorldGame:
                 path = ipath
 
         if choose != None:
-            print('Choose: ', choose, 'type 3', 'path: ', path)
+            # print('Choose: ', choose, 'type 3', 'path: ', path)
             return [1, choose], path
         else:
-            print('Error: No action found')
+            # print('Error: No action found')
             return None
         
     def move_agent(self, position, path):
@@ -249,25 +249,25 @@ class WumpusWorldGame:
             elif action[0] == 2:
                 self.shoot(action[1], path)
             else:
-                print('Error: Invalid action')
+                # print('Error: Invalid action')
                 return None
             
             if self.agent.is_dead():
-                print('Agent is dead')
+                # print('Agent is dead')
                 return self.score
             if self.agent.is_escape():
-                print('Agent is escape')
+                # print('Agent is escape')
                 return self.score
             
             
 
 ####Test
-input_holder = InputHolder('test/map5.txt')              
-game = WumpusWorldGame(input_holder)
-score = game.solve()  
-ff.close()
-f = open('output.txt', 'w')
-for i in game.path:
-    f.write(str(i) + '\n')
-f.close()
-print(score)
+# input_holder = InputHolder('test/map5.txt')              
+# game = WumpusWorldGame(input_holder)
+# score = game.solve()  
+# ff.close()
+# f = open('output.txt', 'w')
+# for i in game.path:
+#     f.write(str(i) + '\n')
+# f.close()
+# print(score)
