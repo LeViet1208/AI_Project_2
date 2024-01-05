@@ -48,6 +48,7 @@ class App:
             self.visible_world.on_shoot_arrow(row, col)
             self.console_log = 'Agent has shot to ' + str(x) + ' ' + str(y)
 
+            # Comment 2 dòng này để xem kết quả của việc bắn và thấy được việc nhảy cóc
             self.visible_world.on_move(row, col)
             self.console_log = self.console_log + '\nAgent has moved to ' + str(x) + ' ' + str(y)
 
