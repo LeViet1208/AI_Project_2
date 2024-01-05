@@ -14,6 +14,12 @@ class App:
         self.path = self.game.path
         self.score = self.game.solve()
 
+        ff = open('output.txt', 'w')
+        ff.write(str(self.score) + '\n')
+        for i in range(len(self.path)):
+            ff.write(str(self.path[i]) + '\n')
+        ff.close()
+
         # Hold the console log at the current step
         self.console_log = ''
 

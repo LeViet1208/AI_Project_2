@@ -312,12 +312,12 @@ class WumpusWorldGame:
             
 
 ####Test
-input_holder = InputHolder('test/map4.txt')              
-game = WumpusWorldGame(input_holder)
-score = game.solve()  
-ff.close()
-f = open('output.txt', 'w')
-for i in game.path:
-    f.write(str(i) + '\n')
-f.close()
-print(score)
+# input_holder = InputHolder('test/map4.txt')              
+# game = WumpusWorldGame(input_holder)
+# score = game.solve()  
+# ff.close()
+# f = open('output.txt', 'w')
+# for i in game.path:
+#     f.write(str(i) + '\n')
+# f.close()
+# print(score)
