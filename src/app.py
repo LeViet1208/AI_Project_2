@@ -23,7 +23,7 @@ class App:
         for i in range(len(self.path)):
             self.draw()
             self.analyze_path(i)
-            time.sleep(5)
+            time.sleep(3)
 
         if self.hasAgentEscaped:
             print('Agent has escaped!')
